@@ -1,0 +1,124 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { ConfirmModal } from '@/components/ConfirmModal';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { InfoBanner } from '@/components/ui/InfoBanner';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { TextField } from '@/components/ui/TextField';
+import { ColorTokens, spacing, typography } from '@/constants/theme';
+import { useAppStore } from '@/store/useAppStore';
+import { useColors } from '@/store/useSettingsStore';
+
+export default function DemenagementNouvelleDemandeScreen() {
+  const colors = useColors();
+  const styles = React.useMemo(() => makeStyles(colors), [colors]);
+  const router = useRouter();
+  const client = useAppStore((s) => s.client);
+  const creerDemenagement = useAppStore((s) => s.creerDemenagement);
+  const [nouvelleAdresse, setNouvelleAdresse] = useState('');
+  const [confirmVisible, setConfirmVisible] = useState(false);
+
+  const eligible = nouvelleAdresse.trim().length > 4;
+
+  function onConfirmer() {
+    creerDemenagement(nouvelleAdresse);
+    setConfirmVisible(false);
+    router.replace('/demenagement');
+  }
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <ScreenHeader title="Déménager ma Fibre" />
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <Text style={[typography.caption as any, styles.intro]}>
+            Préparez votre déménagement en vérifiant l'éligibilité de votre nouvelle adresse. La procédure est
+            simple et rapide.
+          </Text>
+
+          <Card style={styles.card}>
+            <View style={styles.row}>
+              <Ionicons name="wifi-outline" size={18} color={colors.primaryDark} />
+              <View style={{ marginLeft: spacing.sm }}>
+                <Text style={styles.rowLabel}>Ligne à transférer</Text>
+                <Text style={styles.rowValue}>{client.telephone}</Text>
+              </View>
+            </View>
+          </Card>
+
+          <Card style={styles.card}>
+            <View style={styles.row}>
+              <Ionicons name="location-outline" size={18} color={colors.primaryDark} />
+              <View style={{ marginLeft: spacing.sm }}>
+                <Text style={styles.rowLabel}>Adresse actuelle</Text>
+                <Text style={styles.rowValue}>
+                  {client.adresse.rue}, {client.adresse.ville}
+                </Text>
+              </View>
+            </View>
+          </Card>
+
+          <TextField
+            label="Nouvelle adresse"
+            value={nouvelleAdresse}
+            onChangeText={setNouvelleAdresse}
+            placeholder="Rechercher une adresse..."
+            icon="search"
+          />
+          <Pressable>
+            <Text style={styles.geolocLink}>◎ Utiliser ma position</Text>
+          </Pressable>
+
+          {eligible && (
+            <View style={{ marginTop: spacing.md }}>
+              <InfoBanner
+                icon="checkmark-circle"
+                tone="info"
+                text="Bonne nouvelle ! Votre nouvelle adresse est éligible à la fibre optique Cortex. Vous pouvez procéder au transfert."
+              />
+            </View>
+          )}
+
+          <View style={{ marginTop: spacing.xl }}>
+            <Button
+              label="Envoyer ma demande de déménagement"
+              icon="arrow-forward"
+              iconPosition="right"
+              disabled={!eligible}
+              onPress={() => setConfirmVisible(true)}
+            />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <ConfirmModal
+        visible={confirmVisible}
+        title="Envoyer votre demande ?"
+        message="Confirmez-vous l'envoi de votre demande de déménagement ?"
+        confirmLabel="Oui, envoyer"
+        onConfirm={onConfirmer}
+        onCancel={() => setConfirmVisible(false)}
+      />
+    </SafeAreaView>
+  );
+}
+
+function makeStyles(colors: ColorTokens) {
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.background },
+  flex: { flex: 1 },
+  scroll: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  intro: { marginBottom: spacing.lg },
+  card: { marginBottom: spacing.md },
+  row: { flexDirection: 'row', alignItems: 'center' },
+  rowLabel: { fontSize: 11.5, color: colors.muted },
+  rowValue: { fontSize: 14, fontWeight: '700', color: colors.ink, marginTop: 1 },
+  sectionSpacing: { marginTop: spacing.md, marginBottom: spacing.sm },
+  geolocLink: { color: colors.primaryDark, fontWeight: '600', fontSize: 12.5, marginTop: spacing.sm },
+});
+}

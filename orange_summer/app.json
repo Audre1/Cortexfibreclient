@@ -1,0 +1,70 @@
+{
+  "expo": {
+    "name": "CORTEX FIBER",
+    "slug": "cortex-fiber-client",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "cortexfiber",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "CORTEX FIBER utilise votre position pour vérifier l'éligibilité fibre à votre adresse."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FF7900",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "orange.cortexfiberclient.com",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#FF7900"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "CORTEX FIBER utilise votre position pour vérifier l'éligibilité fibre à votre adresse."
+        }
+      ],
+      "expo-font",
+      "expo-status-bar",
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "3a2d5433-2888-4b5f-a501-9692b310704e"
+      }
+    },
+    "owner": "madrey"
+  }
+}

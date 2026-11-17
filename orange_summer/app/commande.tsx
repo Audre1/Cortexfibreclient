@@ -1,0 +1,159 @@
+import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useMemo, useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { ConfirmModal } from '@/components/ConfirmModal';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { TextField } from '@/components/ui/TextField';
+import { ColorTokens, spacing, typography } from '@/constants/theme';
+import { offres } from '@/data/mockData';
+import { Adresse } from '@/data/types';
+import { useAppStore } from '@/store/useAppStore';
+import { useColors } from '@/store/useSettingsStore';
+
+export default function CommandeScreen() {
+  const colors = useColors();
+  const styles = React.useMemo(() => makeStyles(colors), [colors]);
+  const router = useRouter();
+  const params = useLocalSearchParams<{ adresse?: string; offreId?: string; telephone?: string }>();
+  const client = useAppStore((s) => s.client);
+  const creerDemandeInstallation = useAppStore((s) => s.creerDemandeInstallation);
+  const mettreAJourClient = useAppStore((s) => s.mettreAJourClient);
+  const demandeEnCours = useAppStore((s) => s.demandeEnCours);
+
+  const adresse: Adresse = useMemo(() => {
+    if (params.adresse) {
+      try {
+        return JSON.parse(params.adresse as string);
+      } catch {
+        return client.adresse;
+      }
+    }
+    return client.adresse;
+  }, [params.adresse, client.adresse]);
+
+  const offre = useMemo(() => offres.find((o) => o.id === params.offreId) ?? offres[0], [params.offreId]);
+
+  const [telephone, setTelephone] = useState((params.telephone as string) || '');
+  const [nom, setNom] = useState('');
+  const [prenom, setPrenom] = useState('');
+  const [email, setEmail] = useState('');
+  const [confirmVisible, setConfirmVisible] = useState(false);
+
+  const formValide = telephone.trim() && nom.trim() && prenom.trim() && (!email.trim() || email.trim().includes('@'));
+
+  async function onConfirmer() {
+    setConfirmVisible(false);
+    // Email facultatif : vide, on garde celui déjà connu.
+    const emailFinal = email.trim() || client.email;
+    mettreAJourClient({ nom, prenom, telephone, email: emailFinal, adresse });
+    await creerDemandeInstallation({ adresse, offre, telephone, email: emailFinal });
+    router.replace('/demande-confirmation');
+  }
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <ScreenHeader title="Commande" subtitle="Vérifiez vos informations avant de confirmer" />
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <Text style={typography.bodyBold as any}>Votre offre</Text>
+          <Pressable onPress={() => router.back()}>
+            <Card style={styles.offreCard}>
+              <View style={styles.offreIconWrap}>
+                <Ionicons name={offre.icone as any} size={20} color={colors.white} />
+              </View>
+              <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                <Text style={typography.bodyBold as any}>{offre.nom}</Text>
+                <Text style={styles.offrePrix}>
+                  {offre.prixFCFA.toLocaleString('fr-FR')} FCFA / mois
+                </Text>
+              </View>
+              <Ionicons name="pencil" size={16} color={colors.muted} />
+            </Card>
+          </Pressable>
+
+          <View style={styles.addressRow}>
+            <Ionicons name="location-outline" size={16} color={colors.muted} />
+            <Text style={styles.addressText} numberOfLines={2}>
+              {adresse.rue}, {adresse.codePostal} {adresse.ville}
+            </Text>
+          </View>
+
+          <Text style={[typography.bodyBold as any, styles.sectionSpacing]}>Vos coordonnées</Text>
+          <View style={styles.rowFields}>
+            <View style={{ flex: 1, marginRight: spacing.sm }}>
+              <TextField label="Nom" value={nom} onChangeText={setNom} placeholder={client.nom} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <TextField label="Prénom" value={prenom} onChangeText={setPrenom} placeholder={client.prenom} />
+            </View>
+          </View>
+          <TextField
+            label="Numéro de téléphone"
+            value={telephone}
+            onChangeText={setTelephone}
+            placeholder={client.telephone}
+            keyboardType="phone-pad"
+            icon="call-outline"
+          />
+          <TextField
+            label="Email (facultatif)"
+            value={email}
+            onChangeText={setEmail}
+            placeholder={client.email}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            icon="mail-outline"
+          />
+
+          <View style={{ marginTop: spacing.lg }}>
+            <Button
+              label="Confirmer ma commande"
+              icon="checkmark"
+              disabled={!formValide}
+              loading={demandeEnCours}
+              onPress={() => setConfirmVisible(true)}
+            />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <ConfirmModal
+        visible={confirmVisible}
+        title="Confirmer votre commande ?"
+        message="Confirmez-vous l'envoi de votre commande d'installation ?"
+        confirmLabel="Oui, confirmer"
+        loading={demandeEnCours}
+        onConfirm={onConfirmer}
+        onCancel={() => setConfirmVisible(false)}
+      />
+    </SafeAreaView>
+  );
+}
+
+function makeStyles(colors: ColorTokens) {
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.background },
+  flex: { flex: 1 },
+  scroll: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
+  offreCard: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm, marginBottom: spacing.md },
+  offreIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  offrePrix: { fontSize: 13, fontWeight: '700', color: colors.primaryDark, marginTop: 2 },
+  addressRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing.xl },
+  addressText: { marginLeft: spacing.xs, flex: 1, ...(typography.caption as any) },
+  sectionSpacing: { marginBottom: spacing.sm },
+  rowFields: { flexDirection: 'row' },
+});
+}

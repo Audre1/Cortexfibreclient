@@ -1,0 +1,15 @@
+{
+  "name": "CORTEX FIBER",
+  "short_name": "CORTEX",
+  "description": "Votre fibre Orange, votre box et vos services au même endroit.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FF7900",
+  "theme_color": "#FF7900",
+  "lang": "fr",
+  "icons": [
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
